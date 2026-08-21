@@ -1,3 +1,18 @@
+# REPORT v0.7.1 Fix Lint
+
+## Sửa lỗi GitHub Actions
+
+- Sửa `src/main.tsx` tại hàm `alignObject()`.
+- Nguyên nhân: `ObjectKeyframe.previewUrl` có kiểu `string | undefined`, trong khi `alignImageUrls()` yêu cầu `string[]`.
+- Cách sửa: lọc URL bằng TypeScript type guard trước khi truyền vào alignment.
+- Không thay đổi dữ liệu quét, reconstruction, IndexedDB hoặc workflow deploy.
+
+## Kiểm tra
+
+- Đã đối chiếu đúng lỗi Actions: `TS2345 (string | undefined)[] is not assignable to string[]`.
+- `npm install` trong môi trường hiện tại vẫn timeout nên chưa thể chạy full `tsc --noEmit` cục bộ.
+- ZIP được kiểm tra tính toàn vẹn sau khi đóng gói.
+
 # REPORT — 3D Scanner Studio v0.7 Photogrammetry Pipeline
 
 ## Nền source
