@@ -1,29 +1,43 @@
-# 3D Scanner Studio v0.6 — Object Reconstruction
+# 3D Scanner Studio v0.7 — Photogrammetry Pipeline
 
-Web/PWA mobile-first cho quét phòng, vật thể, người và motion capture. v0.6 chuyển trọng tâm sang **reconstruction vật thể 3D thật trên trình duyệt**.
+Ứng dụng web/PWA mobile-first để thu dữ liệu 3D bằng camera điện thoại, chạy local-first và ưu tiên giải pháp miễn phí.
 
-## Object Scan v0.6
+## Trọng tâm v0.7
 
-1. Bật camera sau.
-2. Đặt vật thể trên nền tương đối đơn giản, ánh sáng đều.
-3. Bấm **Khóa vật thể** hoặc chạm vào bounding box AI.
-4. Bấm **Quét liên tục** và đi chậm một vòng 360° quanh vật thể.
-5. App tự bỏ frame mờ/tối, tự lấy keyframe theo góc.
-6. Nhập chiều rộng thực tế của vật thể (mm).
-7. Bấm **Dựng 3D**.
-8. Xoay kiểm tra model và xuất GLB / OBJ / PLY.
+### Quét vật thể
+- Quét liên tục, tự lấy keyframe nhanh hơn bản v0.6.
+- Khóa vật thể bằng nhận diện AI hoặc vùng giữa màn hình.
+- Tạo silhouette và dựng Visual Hull 3D thật trên trình duyệt.
+- Feature matching/Align bằng OpenCV.js miễn phí: ORB + BFMatcher + RANSAC.
+- Preview mesh và xuất GLB / OBJ / PLY.
 
-### Reconstruction hiện tại
+### Quét phòng
+- Đã có **Quét phòng liên tục** thay vì chỉ lưu frame thủ công.
+- Tự lấy keyframe theo độ nét + thay đổi hình ảnh + góc cảm biến nếu có.
+- Coverage 360°.
+- Align keyframe bằng OpenCV.js để kiểm tra overlap và khả năng liên kết ảnh.
+- Lưu frame gốc vào IndexedDB để không mất dữ liệu khi xử lý tiếp.
 
-v0.6 dùng **silhouette visual hull + voxel carving**. Đây là geometry 3D thật, không phải hình minh họa. Ưu điểm: chạy local trên browser, không cần server/GPU trả phí. Giới hạn: bề mặt lõm sâu, vật bóng/trong suốt và texture photogrammetry chưa được tái tạo đầy đủ.
+### Quét người
+- Đầu & vai / nửa người trên / toàn thân / Face Detail.
+- Pose + Face Mesh + Hands tracking.
+- Quét liên tục, tự giữ frame đạt chất lượng.
 
-## Human Scan
+### Multi-device
+- Giữ WebRTC P2P Host/Join và đồng bộ trạng thái từ các bản trước.
 
-Có 4 profile: Đầu & vai, Nửa người trên, Toàn thân, Face Detail. Camera hiển thị Pose + Face Mesh + Hands và có **quét liên tục** tự giữ frame đạt chất lượng theo đúng profile. Skeleton chỉ dùng tracking; mục tiêu cuối là body surface → retopology → humanoid rig → skin weight.
+## Free / local-first
+- Không API photogrammetry trả phí.
+- Không cloud reconstruction bắt buộc.
+- OpenCV.js được tải trực tiếp để chạy feature matching trên thiết bị.
+- Dữ liệu scan mặc định lưu trên thiết bị bằng IndexedDB.
+- GitHub Pages dùng để host frontend.
 
-## Multi-device
+## Luồng photogrammetry mục tiêu
 
-Giữ WebRTC P2P Offer/Answer thủ công cho trạng thái phiên quét. Ảnh dung lượng lớn chưa tự truyền P2P cho tới khi có chunking + checksum + retry/resume.
+Capture → Mask → Align → Camera Pose/SfM → Sparse Cloud → Dense/MVS/Depth → Mesh → Texture → Clean → Export
+
+v0.7 đã triển khai Capture, Mask, Align foundation và Visual Hull object mesh. SfM 3D đầy đủ, dense MVS và texture baking chưa được giả lập là đã hoàn thiện.
 
 ## Chạy local
 
@@ -34,8 +48,6 @@ npm run build
 npm run dev
 ```
 
-Mở `http://localhost:5173` trên PC. Camera trên thiết bị khác cần HTTPS hoặc localhost/ADB reverse.
-
 ## GitHub Pages
 
-Workflow `.github/workflows/deploy.yml` build bằng Node 22 và deploy Pages. Trong repo GitHub phải bật **Settings → Pages → Source: GitHub Actions**.
+Workflow `.github/workflows/deploy.yml` dùng Node 22, lint, build và deploy Pages.
