@@ -1,0 +1,11 @@
+import * as THREE from 'three';
+import type {ReconMesh} from './reconstruction';
+
+export class MeshPreview{
+  private renderer:THREE.WebGLRenderer;private scene=new THREE.Scene();private camera:THREE.PerspectiveCamera;private object:THREE.Mesh|null=null;private raf=0;private down=false;private lx=0;private ly=0;private yaw=.6;private pitch=.25;
+  constructor(private canvas:HTMLCanvasElement){this.renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});this.renderer.setPixelRatio(Math.min(devicePixelRatio,2));this.camera=new THREE.PerspectiveCamera(45,1,.01,20);this.scene.add(new THREE.HemisphereLight(0xffffff,0x273044,2.4));const d=new THREE.DirectionalLight(0xffffff,3);d.position.set(2,3,2);this.scene.add(d);this.scene.background=new THREE.Color(0x070a0f);this.bind();this.loop()}
+  private bind(){this.canvas.addEventListener('pointerdown',e=>{this.down=true;this.lx=e.clientX;this.ly=e.clientY;this.canvas.setPointerCapture(e.pointerId)});this.canvas.addEventListener('pointermove',e=>{if(!this.down)return;this.yaw+=(e.clientX-this.lx)*.008;this.pitch=Math.max(-1.2,Math.min(1.2,this.pitch+(e.clientY-this.ly)*.008));this.lx=e.clientX;this.ly=e.clientY});this.canvas.addEventListener('pointerup',()=>this.down=false)}
+  setMesh(mesh:ReconMesh){this.object?.geometry.dispose();if(this.object)this.scene.remove(this.object);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(mesh.positions,3));g.setIndex(new THREE.BufferAttribute(mesh.indices,1));g.computeVertexNormals();this.object=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:0x8aa7ff,roughness:.7,metalness:.02}));this.scene.add(this.object)}
+  private loop=()=>{const rect=this.canvas.getBoundingClientRect();const w=Math.max(1,Math.round(rect.width)),h=Math.max(1,Math.round(rect.height));if(this.canvas.width!==w||this.canvas.height!==h){this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.updateProjectionMatrix()}const r=2.2;this.camera.position.set(Math.sin(this.yaw)*Math.cos(this.pitch)*r,Math.sin(this.pitch)*r,Math.cos(this.yaw)*Math.cos(this.pitch)*r);this.camera.lookAt(0,0,0);this.object?.rotateY(.0015);this.renderer.render(this.scene,this.camera);this.raf=requestAnimationFrame(this.loop)}
+  dispose(){cancelAnimationFrame(this.raf);this.object?.geometry.dispose();this.renderer.dispose()}
+}

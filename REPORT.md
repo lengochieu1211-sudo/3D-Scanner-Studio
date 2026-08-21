@@ -1,93 +1,59 @@
-# REPORT — v0.5 UI Pro
-
-## Mục tiêu
-Nâng cấp toàn bộ UI/UX trên nền v0.4, không thay đổi nền logic scan/multi-device và không thêm chức năng reconstruction giả.
-
-## Thay đổi giao diện
-- Visual system dark professional mới với accent xanh tím/cyan, border, depth, typography và trạng thái nhất quán.
-- Header/brand mới, không có branding công ty.
-- Mode cards có icon, active state, hover state; mobile chuyển thành horizontal swipe để tiết kiệm chiều cao.
-- Camera workspace có LIVE/READY badge, scan corners, empty state chuyên nghiệp và guide pill.
-- Scan Control panel có hierarchy rõ, quality indicator, actions/control/stats compact hơn.
-- Coverage, Multi-Device, Self-Test và Pipeline dùng chung premium panel system.
-- Mobile breakpoint được tinh chỉnh cho màn nhỏ 390–640 px; giữ camera là vùng ưu tiên lớn nhất.
-- Service Worker cache key tăng từ v4 lên v5 để giảm nguy cơ giữ CSS cũ sau deploy.
-
-## Logic giữ nguyên
-- Camera trước/sau/USB, MediaPipe Pose/Face/Hands/Object, IndexedDB, quality score, coverage, P2P Offer/Answer, calibration, session state và Test Lab vẫn giữ nguyên.
-- Không tự upload dữ liệu scan.
-- Chưa giả lập point cloud/mesh/rig/reconstruction hoàn chỉnh.
-
-## Kiểm tra
-- Cấu trúc source đầy đủ.
-- Đã rà JSX/CSS sau chỉnh sửa và giữ nguyên handler/state logic.
-- TypeScript hệ thống hiện có: 5.8.3; package yêu cầu TypeScript 7.0.2.
-- Chưa xác nhận full npm build nếu môi trường không có dependency/registry. Trên PC chạy `npm install`, `npm run lint`, `npm run build`.
-
-# REPORT – 3D Scanner Studio v0.4 Multi-Device Foundation
+# REPORT — 3D Scanner Studio v0.6 Object Reconstruction
 
 ## Nền source
-
-- Dùng đúng FULL SOURCE v0.3 Scan QA làm nền.
-- Không rollback source cũ.
-- Không thêm branding công ty.
-- Không push GitHub hoặc deploy.
+- Dùng đúng FULL SOURCE v0.5.1 Fix Build làm nền.
+- Không rollback sang bản cũ.
+- Giữ Room Scan, Human Tracking, Motion Capture, IndexedDB, PWA, WebRTC multi-device và GitHub Pages workflow.
 
 ## Thay đổi chính
+- Viết lại luồng Object Scan theo Continuous Scan.
+- Khóa vật thể bằng MediaPipe Object Detector; có fallback vùng quét thủ công cho vật thể AI không biết tên.
+- Tự lấy keyframe khi ảnh đủ sáng/nét và góc thay đổi.
+- Dùng DeviceOrientation nếu có; fallback timed-angle khi không có.
+- Tách silhouette cục bộ từ vùng vật thể và làm sạch mask.
+- Thêm coverage 360° 8 hướng.
+- Thêm reconstruction 3D thật bằng Visual Hull / voxel carving.
+- Thêm WebGL 3D preview bằng Three.js.
+- Xuất GLB, OBJ và PLY thật từ mesh vừa dựng.
+- Có scale theo chiều rộng thực tế người dùng nhập (mm).
+- Human Scan tách profile Đầu & vai / Nửa người / Toàn thân / Face Detail; chân không bị tính thiếu nếu profile không yêu cầu.
+- Giữ Pose + Face Mesh + Hand Tracking.
+- Thêm Human Continuous Scan: tự giữ keyframe khi tracking đúng vùng đã chọn, ảnh đủ nét/sáng; không bắt buộc chân nếu profile không yêu cầu.
+- Service Worker cache tăng lên v6.
 
-### Multi-device thật
-- Thêm `src/multidevice.ts` với WebRTC DataChannel P2P.
-- Host tạo SDP Offer; Join nhận Offer và tạo Answer; Host nhận Answer.
-- Không giả QR/mã phòng thành kết nối khi chưa có signaling server.
-- Dùng STUN công khai để hỗ trợ ICE; kết nối thực tế vẫn phụ thuộc mạng/NAT của thiết bị.
-- Đồng bộ Device Status, Scan State và coverage sector.
+## File thêm
+- `src/reconstruction.ts`: segmentation, keyframe geometry, visual hull, voxel surface mesh, GLB/OBJ/PLY export.
+- `src/preview3d.ts`: 3D mesh preview và thao tác xoay.
 
-### Session management
-- Thêm state machine: idle / calibrating / ready / scanning / paused / processing / review / export.
-- Thêm session code và vai trò thiết bị Front/Back/Left/Right/Top/Auto.
-- Thêm dashboard thiết bị: FPS, độ phân giải, tracking, depth capability.
-- Thêm calibration theo kích thước tham chiếu mm và ghi chú marker.
-- Thêm Test Lab mô phỏng 3 điện thoại để kiểm tra UI/logic nhanh trên PC.
+## File sửa
+- `src/main.tsx`
+- `src/style.css`
+- `package.json` → version 0.6.0
+- `public/sw.js`
+- `README.md`
+- `REPORT.md`
 
-### Storage/recovery
-- IndexedDB schema tăng từ v1 lên v2 nhưng giữ store cũ, thêm `sessions` để migration không xóa frame/project hiện có.
-- Frame metadata bổ sung deviceId, sessionId và camera settings.
-- Project metadata nâng schema lên v4 và lưu scan state/session.
-- Export JSON v4 chứa multi-device/session/camera metadata nhưng không nhúng Base64.
+## Logic / giới hạn được giữ đúng
+- Visual Hull là reconstruction geometry thật nhưng không phải photogrammetry texture hoàn chỉnh.
+- Vật lõm sâu, kính, gương, vật bóng và nền cùng màu vật thể có thể gây silhouette sai.
+- AI detector không nhận được vật lạ vẫn có fallback vùng khóa thủ công.
+- Room Scan chưa giả dựng mesh kiến trúc khi chưa có camera pose/depth fusion.
+- Human tracking chưa giả thành human mesh/rig.
+- Multi-device chưa truyền ảnh/video lớn cho tới khi có chunking/checksum/retry.
 
-### Coverage
-- Coverage hiển thị hợp nhất local + remote.
-- Remote device có thể gửi sector khi chụp frame.
-- Test Lab có shared coverage để test giao diện trước khi dùng nhiều điện thoại thật.
+## Kiểm tra
+- TypeScript/TSX syntax transpile: PASS cho main.tsx, reconstruction.ts, preview3d.ts, multidevice.ts, storage.ts, vision.ts.
+- GitHub workflow: giữ Node 22, lint → build → Pages deploy.
+- `package.json`: dependencies khóa version, không dùng `latest`.
+- `package-lock.json`: chưa sinh được trong môi trường làm việc do npm registry timeout; GitHub Actions trước đó của project đã chứng minh install/lint/build chạy được với source v0.5.1. Cần xác nhận lại v0.6 sau khi push.
+- Secret scan: không thêm API key/token/private key.
+- Firebase: project này không có Firebase config và không thêm/đổi Firebase.
+- GitHub repo/deploy: không push, không deploy.
 
-## Logic được kiểm tra
-
-- Tracking không bị coi là mesh/rig.
-- Multi-device state/coverage không đồng nghĩa reconstruction 3D.
-- Ảnh gốc vẫn local-first; chưa truyền file lớn qua P2P để tránh memory/network failure.
-- Session recovery chỉ phục hồi metadata an toàn, không tự khởi động camera sau reload.
-- IndexedDB migration không xóa store `frames`/`projects` cũ.
-- GitHub Pages vẫn dùng `base: './'`.
-- Workflow không tự deploy ngoài GitHub Pages khi user push lên main.
-
-## Chưa hoàn thành / không khai báo giả
-
-- QR signaling tự động.
-- Chunked P2P frame transfer + retry/resume.
-- Camera synchronization chính xác cấp frame/timecode giữa nhiều máy.
-- Camera intrinsics calibration chuyên sâu.
-- SLAM/VIO/camera pose.
-- Depth fusion / LiDAR native.
-- Point cloud / mesh reconstruction.
-- Retopology / rig / skin / animation export thật.
-
-## Kiểm tra trước giao
-
-- TypeScript syntax transpile: PASS cho `main.tsx`, `storage.ts`, `multidevice.ts`, `vision.ts`, `vite.config.ts`.
-- Type-check độc lập `storage.ts` + `multidevice.ts`: PASS bằng TypeScript compiler có sẵn.
-- `npm install`: TIMEOUT do npm registry trong môi trường hiện tại, vì vậy chưa có `node_modules`/`package-lock.json`.
-- Full `npm run lint` + `npm run build`: chưa thể xác nhận do dependency chưa tải được; không báo PASS giả.
-- package.json: version 0.4.0, dependency version vẫn khóa cố định.
-- PWA cache đã tăng `scanner-shell-v4` để tránh giữ shell v0.3.
-- Secret scan: không thấy token/API key/private key theo các pattern phổ biến.
-- ZIP integrity: kiểm tra sau khi đóng gói bằng `unzip -t`.
+## Nâng cấp tiếp theo đề xuất
+1. SfM camera pose + feature matching.
+2. Multi-view stereo / depth fusion.
+3. Texture projection + blending.
+4. Mesh decimation, normals, hole filling.
+5. Multi-device frame chunking + checksum + resume.
+6. Human silhouette reconstruction + retopo + rig.

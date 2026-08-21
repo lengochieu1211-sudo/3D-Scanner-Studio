@@ -1,50 +1,31 @@
-# 3D Scanner Studio v0.5 UI Pro
+# 3D Scanner Studio v0.6 — Object Reconstruction
 
-Bản nâng cấp giao diện chuyên nghiệp, mobile-first, phát triển từ v0.4 Multi-Device. Logic quét, MediaPipe, IndexedDB và WebRTC P2P được giữ nguyên.
+Web/PWA mobile-first cho quét phòng, vật thể, người và motion capture. v0.6 chuyển trọng tâm sang **reconstruction vật thể 3D thật trên trình duyệt**.
 
-# 3D Scanner Studio v0.4 Multi-Device Foundation
+## Object Scan v0.6
 
-Web/PWA mobile-first để thu dữ liệu quét phòng, vật thể, người và motion capture, có nền multi-device thật bằng WebRTC P2P.
+1. Bật camera sau.
+2. Đặt vật thể trên nền tương đối đơn giản, ánh sáng đều.
+3. Bấm **Khóa vật thể** hoặc chạm vào bounding box AI.
+4. Bấm **Quét liên tục** và đi chậm một vòng 360° quanh vật thể.
+5. App tự bỏ frame mờ/tối, tự lấy keyframe theo góc.
+6. Nhập chiều rộng thực tế của vật thể (mm).
+7. Bấm **Dựng 3D**.
+8. Xoay kiểm tra model và xuất GLB / OBJ / PLY.
 
-## Có trong v0.4
+### Reconstruction hiện tại
 
-- Camera mobile/PC, chọn camera, đổi camera, nhiều độ phân giải.
-- MediaPipe Pose + Face + Hands cho Human/Mocap.
-- Object Detector cho Object Scan.
-- Device & Scan Self-Test, Quality Score, Coverage 360°.
-- IndexedDB v2: lưu frame cục bộ, metadata project và session; có migration từ v0.3.
-- Multi-Device Scan Foundation:
-  - Host / Join bằng WebRTC DataChannel P2P thật.
-  - Ghép nối Offer/Answer thủ công, không giả lập QR/signaling server.
-  - Session code, vai trò Front/Back/Left/Right/Top/Auto.
-  - State machine: Idle → Calibrating → Ready → Scanning → Paused → Processing → Review → Export.
-  - Đồng bộ state, thiết bị, tracking/FPS/resolution/depth capability và coverage sector.
-  - Calibration theo kích thước chuẩn/marker.
-  - Test Lab mô phỏng 3 điện thoại để kiểm tra UI trên PC.
-  - Recovery metadata của session trong IndexedDB.
-- Export JSON v4 chứa metadata camera + device + session; ảnh không bị nhúng Base64.
-- PWA shell và GitHub Pages workflow.
+v0.6 dùng **silhouette visual hull + voxel carving**. Đây là geometry 3D thật, không phải hình minh họa. Ưu điểm: chạy local trên browser, không cần server/GPU trả phí. Giới hạn: bề mặt lõm sâu, vật bóng/trong suốt và texture photogrammetry chưa được tái tạo đầy đủ.
 
-## Chủ động chưa giả lập
+## Human Scan
 
-- QR signaling tự động giữa điện thoại (GitHub Pages không cung cấp signaling backend).
-- Truyền hàng loạt ảnh/video dung lượng lớn qua P2P chưa bật cho tới khi có chunking, retry và kiểm tra dung lượng.
-- Camera pose / SLAM / VIO thật.
-- LiDAR / ARKit depth native adapter thật.
-- Point cloud / depth fusion / mesh reconstruction thật.
-- Retopology, humanoid rig, skin weight và GLB/FBX có mesh/rig thật.
+Có 4 profile: Đầu & vai, Nửa người trên, Toàn thân, Face Detail. Camera hiển thị Pose + Face Mesh + Hands và có **quét liên tục** tự giữ frame đạt chất lượng theo đúng profile. Skeleton chỉ dùng tracking; mục tiêu cuối là body surface → retopology → humanoid rig → skin weight.
 
-## Ghép 2 điện thoại không cần server
+## Multi-device
 
-1. Mở cùng trang HTTPS trên cả hai máy.
-2. Máy Host: Multi-Device → Tạo Offer → gửi chuỗi Offer sang máy Join.
-3. Máy Join: dán Offer vào ô nhận → `Dán Offer → tạo Answer` → gửi Answer về Host.
-4. Máy Host: dán Answer → `Nhận Answer`.
-5. Khi WebRTC báo `connected`, trạng thái và coverage sẽ được đồng bộ P2P.
+Giữ WebRTC P2P Offer/Answer thủ công cho trạng thái phiên quét. Ảnh dung lượng lớn chưa tự truyền P2P cho tới khi có chunking + checksum + retry/resume.
 
-Cách này cố ý hơi thủ công nhưng là kết nối thật và không cần backend trả phí. QR/signaling tự động có thể bổ sung sau mà không thay kiến trúc P2P.
-
-## Test local
+## Chạy local
 
 ```bash
 npm install
@@ -53,4 +34,8 @@ npm run build
 npm run dev
 ```
 
-Mở `http://localhost:5173` trên PC. Trên Android có thể dùng ADB reverse để thử camera qua localhost trước khi push GitHub.
+Mở `http://localhost:5173` trên PC. Camera trên thiết bị khác cần HTTPS hoặc localhost/ADB reverse.
+
+## GitHub Pages
+
+Workflow `.github/workflows/deploy.yml` build bằng Node 22 và deploy Pages. Trong repo GitHub phải bật **Settings → Pages → Source: GitHub Actions**.
